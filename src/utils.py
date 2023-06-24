@@ -36,8 +36,8 @@ def SVD(matrix: t.Tensor) -> Tuple[t.Tensor, t.Tensor, t.Tensor]:
     return U, S, V_H
 
 def dataset_activations(
-  model: HookedTransformer,
-  dataset: List[str]
+    model: HookedTransformer,
+    dataset: List[str]
 ):
     """
     Run a dataset through the model, store all the activations.
