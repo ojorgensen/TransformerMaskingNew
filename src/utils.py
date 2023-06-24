@@ -201,3 +201,50 @@ def activation_SVD_tokens_covariance(
     U, S, V_H = SVD(covariance_matrix)
     return U, S, V_H
 
+# Utils for comparing error between different SVDs
+
+def dataset_projection(
+    X: t.Tensor,
+    B: t.Tensor
+) -> t.Tensor:
+    """
+    Take in dataset X (with datapoints as rows) and an orthogonal basis B of a subspace.
+
+    The basis should be of dimension D x M, with M vectors in the basis each of dim D.
+
+    Compute the projection of each datapoint on this subspace, store the results as
+    another dataset in the same form as the original.
+    """
+
+    return B.T @ B @ X.T
+
+
+def top_k_projection(
+    X: t.Tensor,
+    V_H: t.Tensor,
+    k: int
+) -> t.Tensor:
+    """
+    Project the dataset X onto the top k orthogonal basis vectors in V_H
+    """
+    B = V_H[:k,:]
+    proj = dataset_projection(X, B)
+    return proj.T
+
+def matrix_error(
+    X_1: t.Tensor,
+    X_2: t.Tensor
+) -> int:
+    """
+    Treat X_1 and X_2 as rows of datapoints.
+    Then, take the difference between these matrices,
+    compute the l_2 norm of each row,
+    and then sum these norms.
+
+    Return the sum of these norms.
+    """
+    X = X_1 - X_2
+    norms = t.norm(X, dim=1, p=2)
+    sum_of_norms = t.sum(norms)
+
+    return sum_of_norms
