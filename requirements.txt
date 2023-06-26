@@ -1,2 +1,5 @@
 scikit-learn
 transformer-lens
+jupyter
+ipykernel
+matplotlib

@@ -1,7 +1,7 @@
-import plotly.express as px
-import plotly.io as pio
-import plotly.graph_objects as go
-pio.renderers.default = "notebook_connected" # or use "browser" if you want plots to open with browser
+# import plotly.express as px
+# import plotly.io as pio
+# import plotly.graph_objects as go
+# pio.renderers.default = "notebook_connected" # or use "browser" if you want plots to open with browser
 import torch as t
 import torch.nn as nn
 import torch.nn.functional as F

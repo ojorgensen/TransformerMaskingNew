@@ -1,1 +1,3 @@
 tran-mask/*
+__pycache__/
+*.pyc
