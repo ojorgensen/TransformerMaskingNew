@@ -70,5 +70,5 @@ def svd_distributions(
 
 if __name__ == "__main__":
     # Load the model
-    gpt2_small = gpt2_small = HookedTransformer.from_pretrained("gpt2-small")
+    gpt2_small = gpt2_small = src.utils.load_model('gpt2-small')
     svd_distributions('blocks.7.hook_attn_out', gpt2_small)

@@ -1,7 +1,7 @@
-import plotly.express as px
-import plotly.io as pio
-import plotly.graph_objects as go
-pio.renderers.default = "notebook_connected" # or use "browser" if you want plots to open with browser
+# import plotly.express as px
+# import plotly.io as pio
+# import plotly.graph_objects as go
+# pio.renderers.default = "notebook_connected" # or use "browser" if you want plots to open with browser
 import torch as t
 import torch.nn as nn
 import torch.nn.functional as F
@@ -124,15 +124,12 @@ def approximation_error_experiment(
     return comp_errors_list
 
 
-
-
-
 if __name__ == "__main__":
     # Load the model
-    gpt2_small = HookedTransformer.from_pretrained("gpt2-small")
+    gpt2_small = src.utils.load_model("gpt2-small")
 
     # Load the datasets
-    
+    # TODO: load the datasets
     datasets_lang = {
         "addition": addition_dataset,
         "even addition": even_addition_dataset,

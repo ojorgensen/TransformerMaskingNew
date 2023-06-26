@@ -26,6 +26,30 @@ from transformer_lens import utils, HookedTransformer, HookedTransformerConfig, 
 # Saves computation time, since we don't need it for the contents of this notebook
 t.set_grad_enabled(False)
 
+# Create some functions to distinguish between local and colab runs
+def is_colab():
+    try:
+        import google.colab
+        IN_COLAB = True
+    except:
+        IN_COLAB = False
+    return IN_COLAB
+
+
+def load_model(
+    model_name: str    
+) -> HookedTransformer:
+    """
+    Load a transformer lens model.
+    Load it to gpu memory if running on colab, otherwise load it to cpu memory.
+    """
+    model = HookedTransformer.from_pretrained(model_name)
+    if is_colab():
+        model = model.cuda()
+    else:
+        model = model.cpu()
+    return model
+
 
 def SVD(matrix: t.Tensor) -> Tuple[t.Tensor, t.Tensor, t.Tensor]:
     """
@@ -34,6 +58,7 @@ def SVD(matrix: t.Tensor) -> Tuple[t.Tensor, t.Tensor, t.Tensor]:
     """
     U, S, V_H = t.linalg.svd(matrix)
     return U, S, V_H
+
 
 def dataset_activations(
     model: HookedTransformer,
