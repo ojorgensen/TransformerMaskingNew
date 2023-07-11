@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import numpy as np
 import einops
 from fancy_einsum import einsum
-from typing import List, Optional, Callable, Tuple, Union
+from typing import List, Optional, Callable, Tuple, Union, Dict
 import functools
 from tqdm import tqdm
 from IPython.display import display
@@ -122,6 +122,78 @@ def approximation_error_experiment(
     plt.show()
 
     return comp_errors_list
+
+def pca_reconstruction_errors(
+    model: HookedTransformer,
+    target_dataset: List[str],
+    comparison_datasets: Dict[str, List[str]],
+    k: int,
+    layers: int,
+    location: str
+):
+    """
+    Given a target dataset and a comparison dataset, with a transformer model,
+    for each location in the model:
+        1. Compute the singular value decomposition of activations of the final token
+        of the model for the target dataset.
+        2. Consider the subspace corresponding to the top k principle components. (determine k lmao)
+        3. Project the activations corresponding to the comparison dataset onto this subspace.
+        4. Look at the L_2 error of the reconstruction (as a fraction of the total length).
+
+    Repeat this for every location in the model, construct a plot for the MLP layers, the attention layers, and
+    the residual stream.
+    """
+    # Get the number of layers of the model
+    # Shouldn't hardcode, but I know this for gpt2 xl is 48
+    all_accuracies = {}
+    all_comparison_activations_dict = {}
+    target_activations_dict = src.utils.dataset_activations_optimised_locations(
+        model,
+        target_dataset,
+        layers,
+        location,
+        2
+    )
+    for name, comparison_dataset in comparison_datasets.items():
+        comparison_activations_dict = src.utils.dataset_activations_optimised_locations(
+        model,
+        comparison_dataset,
+        layers,
+        location,
+        2
+        )
+
+        all_comparison_activations_dict[name] = comparison_activations_dict
+
+        all_accuracies[name] = []
+
+    for layer in range(layers):
+        target_activations = target_activations_dict[layer]
+        # Do SVD
+        _, _, V_H = src.utils.SVD(target_activations)
+
+
+        for name, comparison_dataset in comparison_datasets.items():
+            comparison_activations_dict = all_comparison_activations_dict[name]
+            comparison_activations = comparison_activations_dict[layer]
+            # Project the comparison activations onto the top k vectors of V_H
+            comparison_approx = top_k_projection(comparison_activations, V_H, k)
+
+            # Get the errors
+            error = matrix_error(comparison_approx, comparison_activations)
+            total_l2_norms = t.sum(t.norm(comparison_activations, dim=1, p=2))
+            error_fraction = error / total_l2_norms
+            all_accuracies[name].append(1 - error_fraction)
+
+    print(all_accuracies)
+
+    for name, accuracies in all_accuracies.items():
+        plt.plot(accuracies, label=name)
+    plt.ylabel("Reconstruction accuracies (as fraction of original)")
+    plt.xlabel("Layer")
+    plt.title(f"Reconstruction accuracies of comparison projection on top {k} vectors of target activations at {location}")
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":

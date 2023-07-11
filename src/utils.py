@@ -127,6 +127,61 @@ def dataset_activations_optimised(
 
     return all_final_activations
 
+def dataset_activations_optimised_locations(
+    model: HookedTransformer,
+    dataset: List[str],
+    layers: int,
+    location: str,
+    max_batch_size: int
+):
+    """
+    Same as earlier function, but returns activations for all locations.
+    """
+
+    num_batches = (len(dataset) + max_batch_size - 1) // max_batch_size
+    all_final_activations = {}
+
+    # Process each batch
+    for batch_idx in range(num_batches):
+        t.cuda.empty_cache()
+        # print("batch_idx be: ", batch_idx)
+        # Determine the start and end index for this batch
+        start_idx = batch_idx * max_batch_size
+        end_idx = min(start_idx + max_batch_size, len(dataset))
+
+        # Extract the subset of the dataset for this batch
+        batch_subset = dataset[start_idx:end_idx]
+
+        # Tokenise the batch, form a batch tensor
+        batch_tokens = model.to_tokens(batch_subset)
+
+        mask = batch_tokens != 50256
+        final_indices = ((mask.cumsum(dim=1) == mask.sum(dim=1).unsqueeze(1)).int()).argmax(dim=1)
+        final_indices = final_indices.view(-1,1)
+
+        # print(batch_tokens)
+        # Feed the tensor through the model
+        _, cache = model.run_with_cache(batch_tokens, return_cache_object=True, remove_batch_dim=False)
+
+        for layer in range(layers):
+            activations = cache[location.format(layer)]
+            # # Take the last activation
+            index_expanded = final_indices.unsqueeze(-1).expand(-1, -1, activations.size(2))
+            # print("index_expanded: ", index_expanded)
+            final_activations = t.gather(activations, 1, index_expanded)
+            # Move the activations to the CPU and store them
+            final_activations = final_activations.cpu()
+            final_activations = final_activations.squeeze()
+            all_final_activations.setdefault(layer, []).append(final_activations)
+
+
+
+    for layer in range(layers):
+        all_final_activations[layer] = t.cat(all_final_activations[layer], dim=0)
+
+
+    return all_final_activations
+
 
 def reshape_activations(
     batch_activations: t.Tensor
