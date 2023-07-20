@@ -10,6 +10,7 @@ setup(
     ),
     version="0.2.0",
     packages=find_packages(),
+    package_dir={"transformer_activation_exploration": "transformer_activation_exploration"},
     install_requires=[
         (
             "transformer-lens @"
