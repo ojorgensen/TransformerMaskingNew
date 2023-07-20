@@ -8,8 +8,6 @@ setup(
         "Tools for investigating the activations of"
         " language models"
     ),
-    long_description=open("README.md", encoding="utf-8").read(),
-    long_description_content_type="text/markdown",
     version="0.2.0",
     packages=find_packages(),
     install_requires=[
