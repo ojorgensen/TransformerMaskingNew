@@ -21,7 +21,7 @@ import pickle
 from transformer_lens.hook_points import HookPoint
 from transformer_lens import utils, HookedTransformer, HookedTransformerConfig, FactoredMatrix, ActivationCache
 
-import src.utils
+import transformer_activation_exploration.utils
 
 # Saves computation time, since we don't need it for the contents of this notebook
 t.set_grad_enabled(False)

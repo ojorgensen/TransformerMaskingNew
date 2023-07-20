@@ -24,7 +24,7 @@ from transformer_lens.hook_points import HookPoint
 from transformer_lens import utils, HookedTransformer, HookedTransformerConfig, FactoredMatrix, ActivationCache
 
 
-import src.utils
+import transformer_activation_exploration.utils
 # Saves computation time, since we don't need it for the contents of this notebook
 t.set_grad_enabled(False)
 
@@ -43,16 +43,16 @@ def svd_distributions(
     """
     for dataset_name, dataset in text_datasets.items():
         if covariance:
-            _, S, _ = src.utils.activations_SVD_covariance(model, dataset, location)
+            _, S, _ = transformer_activation_exploration.utils.activations_SVD_covariance(model, dataset, location)
         else:
-            _, S, _ = src.utils.activations_SVD(model, dataset, location)
+            _, S, _ = transformer_activation_exploration.utils.activations_SVD(model, dataset, location)
         plt.plot(S.cpu(), label=dataset_name)
     
     for dataset_name, dataset in token_datasets.items():
         if covariance:
-            _, S, _ = src.utils.activations_SVD_covariance_tokens(model, dataset, location)
+            _, S, _ = transformer_activation_exploration.utils.activations_SVD_covariance_tokens(model, dataset, location)
         else:
-            _, S, _ = src.utils.activations_SVD_tokens(model, dataset, location)
+            _, S, _ = transformer_activation_exploration.utils.activations_SVD_tokens(model, dataset, location)
         plt.plot(S.cpu(), label=dataset_name)
 
     # Add labels and title
@@ -70,5 +70,5 @@ def svd_distributions(
 
 if __name__ == "__main__":
     # Load the model
-    gpt2_small = gpt2_small = src.utils.load_model('gpt2-small')
+    gpt2_small = gpt2_small = transformer_activation_exploration.utils.load_model('gpt2-small')
     svd_distributions('blocks.7.hook_attn_out', gpt2_small)

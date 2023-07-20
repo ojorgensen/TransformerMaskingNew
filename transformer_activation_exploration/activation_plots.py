@@ -20,7 +20,7 @@ from transformer_lens.hook_points import HookPoint
 from transformer_lens import utils, HookedTransformer, HookedTransformerConfig, FactoredMatrix, ActivationCache
 
 
-import src.utils
+import transformer_activation_exploration.utils
 # Saves computation time, since we don't need it for the contents of this notebook
 t.set_grad_enabled(False)
 
@@ -46,7 +46,7 @@ def activation_plot_final_acts_optimised(
   # Do the forward pass for each dataset
   for name in datasets_lang:
     dataset_lang = datasets_lang[name]
-    final_activations = src.utils.dataset_activations_optimised(model, dataset_lang, location, 16)
+    final_activations = transformer_activation_exploration.utils.dataset_activations_optimised(model, dataset_lang, location, 16)
     # Looking at the final activations! Might want to change this?
 
     # target_X = reshape_activations(activations)

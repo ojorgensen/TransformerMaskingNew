@@ -23,7 +23,7 @@ import json
 from transformer_lens.hook_points import HookPoint
 from transformer_lens import utils, HookedTransformer, HookedTransformerConfig, FactoredMatrix, ActivationCache
 
-import src.utils
+import transformer_activation_exploration.utils
 
 # Saves computation time, since we don't need it for the contents of this notebook
 t.set_grad_enabled(False)
@@ -58,25 +58,25 @@ def approximation_error_experiment(
     if target_datasets_lang != None:
         target_name = [key for key in target_datasets_lang][0]
         target_dataset_lang = target_datasets_lang[target_name]
-        target_activations = src.utils.dataset_activations(model, target_dataset_lang)[1][location]
-        target_X = src.utils.reshape_activations(target_activations)
+        target_activations = transformer_activation_exploration.utils.dataset_activations(model, target_dataset_lang)[1][location]
+        target_X = transformer_activation_exploration.utils.reshape_activations(target_activations)
         # Do SVD for target_X
-        _, _, V_H = src.utils.activation_SVD(model, target_dataset_lang, location)
+        _, _, V_H = transformer_activation_exploration.utils.activation_SVD(model, target_dataset_lang, location)
 
     else:
         target_name = [key for key in target_datasets_tokens][0]
         target_dataset_tokens = target_datasets_tokens[target_name]
-        target_activations = src.utils.dataset_activations_tokens(model, target_dataset_tokens)[1][location]
-        target_X = src.utils.reshape_activations(target_activations)
+        target_activations = transformer_activation_exploration.utils.dataset_activations_tokens(model, target_dataset_tokens)[1][location]
+        target_X = transformer_activation_exploration.utils.reshape_activations(target_activations)
         # Do SVD for target_X
-        _, _, V_H = src.utils.activation_SVD_tokens(model, target_dataset_tokens, location)
+        _, _, V_H = transformer_activation_exploration.utils.activation_SVD_tokens(model, target_dataset_tokens, location)
 
 
     comparison_X_dict = {}
     for key in comparison_datasets_lang:
         comparison_dataset = comparison_datasets_lang[key]
-        comparison_activations = src.utils.dataset_activations(model, comparison_dataset)[1][location]
-        comparison_X = src.utils.reshape_activations(comparison_activations)
+        comparison_activations = transformer_activation_exploration.utils.dataset_activations(model, comparison_dataset)[1][location]
+        comparison_X = transformer_activation_exploration.utils.reshape_activations(comparison_activations)
         # Normalise rows of the comparison activations (to avoid penalising large vectors)
         norms = t.linalg.norm(comparison_X, dim=1, keepdim=True)
         comparison_X = comparison_X / norms
@@ -84,8 +84,8 @@ def approximation_error_experiment(
 
     for key in comparison_datasets_tokens:
         comparison_dataset = comparison_datasets_tokens[key]
-        comparison_activations = src.utils.dataset_activations_tokens(model, comparison_dataset)[1][location]
-        comparison_X = src.utils.reshape_activations(comparison_activations)
+        comparison_activations = transformer_activation_exploration.utils.dataset_activations_tokens(model, comparison_dataset)[1][location]
+        comparison_X = transformer_activation_exploration.utils.reshape_activations(comparison_activations)
         # Normalise rows of the comparison activations (to avoid penalising large vectors)
         norms = t.linalg.norm(comparison_X, dim=1, keepdim=True)
         comparison_X = comparison_X / norms
@@ -104,12 +104,12 @@ def approximation_error_experiment(
         for i in range(n):
             k = (i * dim) // n
             # Get errors for the comparison dataset
-            approx_comparison_X = src.utils.top_k_projection(comparison_X, V_H, k)
-            comp_errors.append(src.utils.matrix_error(approx_comparison_X, comparison_X).cpu())
+            approx_comparison_X = transformer_activation_exploration.utils.top_k_projection(comparison_X, V_H, k)
+            comp_errors.append(transformer_activation_exploration.utils.matrix_error(approx_comparison_X, comparison_X).cpu())
 
             # Get errors for the target dataset
-            approx_target_X = src.utils.top_k_projection(target_X, V_H, k)
-            target_errors.append(src.utils.matrix_error(approx_target_X, target_X).cpu())
+            approx_target_X = transformer_activation_exploration.utils.top_k_projection(target_X, V_H, k)
+            target_errors.append(transformer_activation_exploration.utils.matrix_error(approx_target_X, target_X).cpu())
 
         comp_errors_list.append(comp_errors)
         plt.plot(comp_errors, label = key)
@@ -147,7 +147,7 @@ def pca_reconstruction_errors(
     # Shouldn't hardcode, but I know this for gpt2 xl is 48
     all_accuracies = {}
     all_comparison_activations_dict = {}
-    target_activations_dict = src.utils.dataset_activations_optimised_locations(
+    target_activations_dict = transformer_activation_exploration.utils.dataset_activations_optimised_locations(
         model,
         target_dataset,
         layers,
@@ -155,7 +155,7 @@ def pca_reconstruction_errors(
         2
     )
     for name, comparison_dataset in comparison_datasets.items():
-        comparison_activations_dict = src.utils.dataset_activations_optimised_locations(
+        comparison_activations_dict = transformer_activation_exploration.utils.dataset_activations_optimised_locations(
         model,
         comparison_dataset,
         layers,
@@ -170,7 +170,7 @@ def pca_reconstruction_errors(
     for layer in range(layers):
         target_activations = target_activations_dict[layer]
         # Do SVD
-        _, _, V_H = src.utils.SVD(target_activations)
+        _, _, V_H = transformer_activation_exploration.utils.SVD(target_activations)
 
 
         for name, comparison_dataset in comparison_datasets.items():
@@ -198,7 +198,7 @@ def pca_reconstruction_errors(
 
 if __name__ == "__main__":
     # Load the model
-    gpt2_small = src.utils.load_model("gpt2-small")
+    gpt2_small = transformer_activation_exploration.utils.load_model("gpt2-small")
 
     # Load the datasets
     # TODO: load the datasets

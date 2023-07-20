@@ -19,9 +19,9 @@ import json
 from transformer_lens.hook_points import HookPoint
 from transformer_lens import utils, HookedTransformer, HookedTransformerConfig, FactoredMatrix, ActivationCache
 
-import src.utils
+import transformer_activation_exploration.utils
 
-import src.comparing_centres
+import transformer_activation_exploration.comparing_centres
 
 # Saves computation time, since we don't need it for the contents of this notebook
 t.set_grad_enabled(False)
@@ -44,7 +44,7 @@ def feature_detection_experiment(
     # Get the feature vector from the feature dataset
     # By default, have this be the vector from the centre of the baseline
     # activations to the centre of the feature activations
-    feature_vector = src.comparing_centres.find_activations_centre_diff(
+    feature_vector = transformer_activation_exploration.comparing_centres.find_activations_centre_diff(
         model,
         feature_dataset,
         baseline_dataset,
@@ -58,7 +58,7 @@ def feature_detection_experiment(
     evaluation_activations = {} 
     for label, dataset in evaluation_dataset.items():
         # Note: we are only using the final activations here (regardless of arg!)
-        evaluation_activations[label] = src.utils.dataset_activations_optimised_new(
+        evaluation_activations[label] = transformer_activation_exploration.utils.dataset_activations_optimised_new(
             model,
             dataset,
             location,
