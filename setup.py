@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="transformer-activation-exploration",
+    name="transformer_activation_exploration",
     description=(
         "Tools for investigating the activations of"
         " language models"
