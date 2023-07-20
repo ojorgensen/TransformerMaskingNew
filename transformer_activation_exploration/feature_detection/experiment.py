@@ -54,6 +54,16 @@ def feature_detection_experiment(
     )
     print("part 1 done")
 
+    # Get the mean vector (to use for different types of inner products)
+    # TODO: stop this from repeating computations
+    mean_vector = transformer_activation_exploration.comparing_centres.find_activations_centre(
+        model,
+        baseline_dataset,
+        location,
+        2,
+        use_all_activations
+    )
+
     # Get the activations for the evaluation dataset
     evaluation_activations = {} 
     for label, dataset in evaluation_dataset.items():
@@ -74,6 +84,12 @@ def feature_detection_experiment(
             inner_products[label] = t.einsum(
                 'ij,j->i',
                 activations,
+                feature_vector
+            )
+        elif inner_product_type == 'centered_dot':
+            inner_products[label] = t.einsum(
+                'ij,j->i',
+                activations - mean_vector,
                 feature_vector
             )
         else:
