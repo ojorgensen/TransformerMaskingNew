@@ -15,6 +15,8 @@ from sklearn.manifold import TSNE
 from sklearn.utils import shuffle
 import json
 
+from sklearn.metrics import roc_curve, auc
+
 
 from transformer_lens.hook_points import HookPoint
 from transformer_lens import utils, HookedTransformer, HookedTransformerConfig, FactoredMatrix, ActivationCache
@@ -118,4 +120,24 @@ def feature_detection_experiment(
     plt.legend()
     plt.show()
 
-    return
+    # Create ROC curve
+    # Merge "positive" and "negative" examples
+    y_true = np.concatenate(
+        [
+            np.ones_like(inner_products['positive'].cpu().numpy()),
+            np.zeros_like(inner_products['negative'].cpu().numpy())
+        ]
+    )
+    y_score = np.concatenate(
+        [
+            inner_products['positive'].cpu().numpy(),
+            inner_products['negative'].cpu().numpy()
+        ]
+    )
+    fpr, tpr, _ = roc_curve(y_true, y_score)
+    roc_auc = auc(fpr, tpr)
+    print(f"ROC AUC: {roc_auc:.2f}")
+    # Plot ROC curve
+    plt.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
+
+    return fpr, tpr
