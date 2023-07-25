@@ -175,7 +175,7 @@ def dataset_activations_optimised_new(
   # Process each batch
   for batch_idx in range(num_batches):
     t.cuda.empty_cache()
-    # print("batch_idx be: ", batch_idx)
+    print("batch_idx be: ", batch_idx)
     # Determine the start and end index for this batch
     start_idx = batch_idx * max_batch_size
     end_idx = min(start_idx + max_batch_size, len(dataset))

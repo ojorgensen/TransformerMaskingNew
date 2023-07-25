@@ -73,7 +73,7 @@ def find_activations_centre_diff(
     use_all_activations
   )
 
-  baseline_target = find_activations_centre(
+  target_centre = find_activations_centre(
     model,
     target_dataset,
     location,
@@ -81,5 +81,5 @@ def find_activations_centre_diff(
     use_all_activations
   )
 
-  difference = baseline_target - baseline_centre
+  difference = target_centre - baseline_centre
   return difference
