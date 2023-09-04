@@ -260,48 +260,60 @@ def feature_detection_classifier(
 
     # Find the threshold which maximises accuracy
 
-    optimal_threshold, max_accuracy = find_optimal_threshold(y_true, y_score)
-    print("Optimal threshold:", optimal_threshold)
+    threshold, max_accuracy = find_optimal_threshold(y_true, y_score)
+    print("Optimal threshold:", threshold)
     print("Maximum accuracy:", max_accuracy)
 
-    return
+
+
+    # Calculate the inner products between the feature vector and the activations
+    inner_products_evaluations = {}
+    for label, activations in evaluation_activations.items():
+        inner_products_evaluations[label] = t.einsum(
+            'ij,j->i',
+            activations,
+            feature_vector
+        )
 
 
 
+    print("part 4 done")
+    # Do classification
+    classification = {}
+    # Values larger than 0 are classified as 1, values smaller than 0 are classified as 0
+    for label, inner_product in inner_products_evaluations.items():
+        classification[label] = t.where(inner_product > threshold, t.tensor(1), t.tensor(0))
 
-
-    # # Calculate the inner products between the feature vector and the activations
-    # inner_products = {}
-    # for label, activations in evaluation_activations.items():
-    #     if inner_product_type == 'dot':
-    #         inner_products[label] = t.einsum(
-    #             'ij,j->i',
-    #             activations,
-    #             feature_vector
-    #         )
-    #     elif inner_product_type == 'centered_dot':
-    #         inner_products[label] = t.einsum(
-    #             'ij,j->i',
-    #             activations - mean_vector,
-    #             feature_vector
-    #         )
-    #     else:
-    #         raise NotImplementedError("Only dot product is currently supported")
-    # print("part 3 done")
-
-    # # Calculate the threshold for the inner products (maybe using the feature + baseline dataset?)
-    # if threshold_type == "zero":
-    #     threshold = 0
-    # else:
-    #     raise NotImplementedError("Only zero threshold is currently supported")
-
-    # print("part 4 done")
-    # # Do classification
-    # # Values larger than 0 are classified as 1, values smaller than 0 are classified as 0
-    # for label, inner_product in inner_products.items():
-    #     classification = t.where(inner_product > threshold, t.tensor(1), t.tensor(0))
+    # Report accuracy
+    # Get the true labels for the evaluation dataset
+    true_labels = {}
+    for label, dataset in evaluation_dataset.items():
+        if label == "positive":
+            true_labels[label] = np.ones(len(dataset))
+        else:
+            true_labels[label] = np.zeros(len(dataset))
     
-    # print("part 5 done")
+    # Merge "positive" and "negative" examples
+    y_true_eval = np.concatenate(
+        [
+            true_labels['positive'],
+            true_labels['negative']
+        ]
+    )
+
+    y_score_eval = np.concatenate(
+        [
+            classification['positive'].cpu().numpy(),
+            classification['negative'].cpu().numpy()
+        ]
+    )
+
+    # Calculate accuracy
+    accuracy = np.mean(y_true_eval == y_score_eval)
+    print(f"Accuracy: {accuracy:.2f}")
+
+    return accuracy
+    
 
 
     
