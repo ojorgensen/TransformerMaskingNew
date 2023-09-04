@@ -141,3 +141,167 @@ def feature_detection_experiment(
     plt.plot(fpr, tpr, label=f'ROC curve (area = {roc_auc:.2f})')
 
     return fpr, tpr
+
+
+def find_optimal_threshold(true_values, scores):
+    """
+    Find the threshold that maximizes classification accuracy.
+    
+    Parameters:
+    - true_values (numpy array): Ground truth labels (1 for positive class, 0 for negative class).
+    - scores (numpy array): Scores or probabilities for each datapoint.
+    
+    Returns:
+    - optimal_threshold (float): The threshold value that maximizes accuracy.
+    - max_accuracy (float): The maximum achieved accuracy.
+    """
+    
+    # Ensure the arrays have the same shape
+    assert true_values.shape == scores.shape, "Input arrays must have the same shape."
+
+    # Get unique scores as potential thresholds
+    potential_thresholds = np.unique(scores)
+
+    max_accuracy = 0
+    optimal_threshold = None
+
+    for threshold in potential_thresholds:
+        # Predict 1 if score is greater than or equal to threshold, else 0
+        predictions = (scores >= threshold).astype(int)
+        
+        # Calculate accuracy for this threshold
+        accuracy = np.mean(predictions == true_values)
+        
+        # Update max_accuracy and optimal_threshold if necessary
+        if accuracy > max_accuracy:
+            max_accuracy = accuracy
+            optimal_threshold = threshold
+
+    return optimal_threshold, max_accuracy
+
+
+
+def feature_detection_classifier(
+    model: HookedTransformer,
+    location: str,
+    training_dataset: Dict[str, List[str]],
+    baseline_dataset: List[str],
+    use_all_activations: bool,
+    threshold_dataset: Dict[str, List[str]],
+    evaluation_dataset: Dict[str, List[str]],
+):
+    """
+    Use AtDotLLM to classify text based on inner product with a feature vector.
+    Split the training dataset: use one half of the positive examples to find a feature vector;
+    use the second half to determine the threshold value which maximises accuracy.
+    Then evaluate the evaluation dataset using the feature vector
+    """
+
+    # Get the feature vector from the positive examples of the training dataset
+    feature_vector = transformer_activation_exploration.comparing_centres.find_activations_centre_diff(
+        model,
+        training_dataset,
+        baseline_dataset,
+        location,
+        2,
+        use_all_activations
+    )
+    print("feature vector calculated")
+
+
+    # Get the activations for the evaluation dataset
+    evaluation_activations = {} 
+    for label, dataset in evaluation_dataset.items():
+        # Note: we are only using the final activations here (regardless of arg!)
+        evaluation_activations[label] = transformer_activation_exploration.utils.dataset_activations_optimised_new(
+            model,
+            dataset,
+            location,
+            2,
+            False
+        )
+    print("part 2 done")
+
+    # Determine the threshold for the inner products
+    # Use the threshold dataset to determine the threshold
+
+    # Get the inner for the threshold dataset
+    threshold_activations = {}
+    inner_products = {}
+    for label, dataset in threshold_dataset.items():
+        # Note: we are only using the final activations here (regardless of arg!)
+        threshold_activations[label] = transformer_activation_exploration.utils.dataset_activations_optimised_new(
+            model,
+            dataset,
+            location,
+            2,
+            False
+        )
+        inner_products[label] = t.einsum(
+            'ij,j->i',
+            threshold_activations[label],
+            feature_vector
+        )
+    print("part 3 done")
+    # Determine the threshold which maximises accuracy
+
+    y_true = np.concatenate(
+        [
+            np.ones_like(inner_products['positive'].cpu().numpy()),
+            np.zeros_like(inner_products['negative'].cpu().numpy())
+        ]
+    )
+    y_score = np.concatenate(
+        [
+            inner_products['positive'].cpu().numpy(),
+            inner_products['negative'].cpu().numpy()
+        ]
+    )
+
+    # Find the threshold which maximises accuracy
+
+    optimal_threshold, max_accuracy = find_optimal_threshold(y_true, y_score)
+    print("Optimal threshold:", optimal_threshold)
+    print("Maximum accuracy:", max_accuracy)
+
+    return
+
+
+
+
+
+    # # Calculate the inner products between the feature vector and the activations
+    # inner_products = {}
+    # for label, activations in evaluation_activations.items():
+    #     if inner_product_type == 'dot':
+    #         inner_products[label] = t.einsum(
+    #             'ij,j->i',
+    #             activations,
+    #             feature_vector
+    #         )
+    #     elif inner_product_type == 'centered_dot':
+    #         inner_products[label] = t.einsum(
+    #             'ij,j->i',
+    #             activations - mean_vector,
+    #             feature_vector
+    #         )
+    #     else:
+    #         raise NotImplementedError("Only dot product is currently supported")
+    # print("part 3 done")
+
+    # # Calculate the threshold for the inner products (maybe using the feature + baseline dataset?)
+    # if threshold_type == "zero":
+    #     threshold = 0
+    # else:
+    #     raise NotImplementedError("Only zero threshold is currently supported")
+
+    # print("part 4 done")
+    # # Do classification
+    # # Values larger than 0 are classified as 1, values smaller than 0 are classified as 0
+    # for label, inner_product in inner_products.items():
+    #     classification = t.where(inner_product > threshold, t.tensor(1), t.tensor(0))
+    
+    # print("part 5 done")
+
+
+    
